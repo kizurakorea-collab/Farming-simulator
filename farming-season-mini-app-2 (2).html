@@ -1,0 +1,1323 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Farming Season Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      :root{
+        --bg:#f7efdb; --card:#fffaf0; --card2:#fdf3da; --ink:#2f2a1e; --muted:#7d7460;
+        --line:#e3d5b4; --green:#4c9a3f; --green-d:#35702c; --green-soft:#e2f0d8;
+        --amber:#e8a13a; --amber-soft:#fbeecd; --brown:#8a5a33; --danger:#c0452f;
+        --grass:#79b657; --grass-d:#5d9c42; --soil:#a9743f; --wood:#b07f45; --wood-d:#8a5a33;
+        --chip:#fff6dd; --shadow:0 2px 8px rgba(90,70,30,.12);
+        /* Tinggi viewport Telegram (di-set JS dari viewportStableHeight);
+           fallback: 100dvh. --app-safe-top di-set JS dari
+           safeAreaInset + contentSafeAreaInset Telegram agar header
+           Telegram yang melayang tidak memotong game. */
+        --app-height:100dvh;
+        --app-safe-top:env(safe-area-inset-top, 0px);
+        --app-safe-bottom:env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#201c14; --card:#2c2619; --card2:#332c1d; --ink:#f0e8d5; --muted:#b3a888;
+          --line:#4a4130; --green:#6fbf5a; --green-d:#8fd07c; --green-soft:#2f4423;
+          --amber:#eeb154; --amber-soft:#4a3a1c; --brown:#d09a5f; --danger:#e07a63;
+          --grass:#4d7d38; --grass-d:#3f6b2d; --soil:#7d5527; --wood:#8a6136; --wood-d:#6e4c28;
+          --chip:#3a3222; --shadow:0 2px 8px rgba(0,0,0,.35);
+        }
+      }
+      *{box-sizing:border-box}
+      html{-webkit-text-size-adjust:100%;height:100%;height:100vh;height:100dvh;
+        height:var(--tg-viewport-height,100dvh);background:var(--bg);
+        overscroll-behavior:none}
+      body{margin:0;background:var(--bg);color:var(--ink);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        font-size:15px;line-height:1.45;padding-bottom:86px;
+        min-height:100%;min-height:100vh;min-height:100dvh;
+        min-height:var(--tg-viewport-stable-height,100dvh);min-height:var(--app-height,100dvh);
+        width:100%;overflow-x:hidden;overscroll-behavior-y:none;
+        -webkit-overflow-scrolling:touch}
+      button,[role="button"],select,input:not([type="checkbox"]){min-height:36px}
+      button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);
+        color:var(--ink);border-radius:12px;padding:8px 14px;font-weight:600}
+      button:active{transform:scale(.97)}
+      button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+      .btn-green{background:var(--green);border-color:var(--green-d);color:#fff}
+      .btn-amber{background:var(--amber);border-color:#c07f22;color:#3a2a08}
+      .btn-danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+      .btn-small{min-height:32px;padding:4px 10px;font-size:12px;border-radius:9px}
+      .btn-xs{min-height:30px;padding:3px 9px;font-size:11.5px;border-radius:8px}
+      input,select{font:inherit;background:var(--card);color:var(--ink);
+        border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+      h1{font-size:20px;margin:0}
+      h2{font-size:16.5px;margin:0 0 8px}
+      h3{font-size:15px;margin:0 0 6px}
+      p{margin:0 0 8px}
+      .muted{color:var(--muted)} .small{font-size:12.5px} .tiny{font-size:11.5px}
+      .wrap{max-width:680px;margin:0 auto;padding:12px 12px 0}
+
+      /* status bar */
+      .statusbar{position:sticky;top:0;z-index:40;background:var(--bg);
+        border-bottom:1px solid var(--line);
+        padding:calc(10px + var(--app-safe-top, 0px)) 12px 10px}
+      .statusbar-in{max-width:680px;margin:0 auto}
+      .sb-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .sb-title{font-weight:800;font-size:16px;margin-right:auto}
+      .pill{display:inline-flex;align-items:center;gap:5px;background:var(--card);
+        border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-weight:700;font-size:13.5px}
+      .pill.gram{color:#7a4fd0;border-color:#cdbcf2;background:#f3edff}
+      @media (prefers-color-scheme: dark){.pill.gram{color:#c9aef7;background:#33284d;border-color:#574a7d}}
+      .xpbar{height:8px;background:var(--card2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+      .xpbar>i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .4s}
+      .icon-btn{min-height:36px;width:40px;padding:4px;border-radius:10px;font-size:17px;line-height:1}
+
+      .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+        padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+      .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+      .row-between{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+      .grow{flex:1}
+      .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+      .stat{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+      .stat b{display:block;font-size:16px}
+      .stat span{font-size:11.5px;color:var(--muted)}
+
+      /* tabs */
+      .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);
+        border-top:1px solid var(--line);display:flex;
+        padding:6px 4px calc(6px + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))}
+      .tabbar button{flex:1;background:transparent;border:none;border-radius:12px;min-height:52px;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+        font-size:11px;font-weight:600;color:var(--muted);padding:4px 2px;position:relative}
+      .tabbar button .tic{font-size:20px;line-height:1.1}
+      .tabbar button.active{color:var(--green-d);background:var(--green-soft)}
+      .tab-badge{position:absolute;top:2px;right:calc(50% - 22px);background:var(--danger);color:#fff;
+        font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:99px;
+        display:flex;align-items:center;justify-content:center;padding:0 4px}
+      .tabpage{display:none}.tabpage.active{display:block}
+
+      /* seeds & plots */
+      .seed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+      .seed{border:2px solid var(--line);border-radius:14px;background:var(--card2);padding:9px 6px;
+        text-align:center;min-height:44px}
+      .seed.sel{border-color:var(--green);background:var(--green-soft)}
+      .seed .em{font-size:26px;display:block}
+      .seed b{font-size:13px;display:block}
+      .seed span{font-size:11px;color:var(--muted);display:block}
+      .plot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+      @media(min-width:560px){.plot-grid{grid-template-columns:repeat(4,1fr)}}
+      .plot{border-radius:14px;min-height:104px;padding:8px 6px;text-align:center;position:relative;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%}
+      .plot.empty{background:var(--soil);border:2px dashed #7d5527;color:#fff}
+      .plot.growing{background:var(--card2);border:2px solid var(--amber)}
+      .plot.ready{background:var(--green-soft);border:2px solid var(--green)}
+      .plot .em{font-size:32px;line-height:1.1}
+      .plot b{font-size:12.5px}
+      .plot span{font-size:11px}
+      .pbar{width:88%;height:7px;background:rgba(0,0,0,.15);border-radius:99px;overflow:hidden}
+      .pbar>i{display:block;height:100%;background:var(--green)}
+      .plot.ready .pbar>i{background:var(--green-d)}
+
+      /* pens */
+      .pen{border-radius:14px;overflow:hidden;border:3px solid var(--wood-d);margin-bottom:10px}
+      .pen-grass{background:var(--grass);background-image:radial-gradient(rgba(255,255,255,.14) 1.5px,transparent 1.6px);background-size:22px 22px;
+        height:190px;position:relative}
+      .pen-floor{position:absolute;left:6%;right:6%;bottom:8px;height:44px;background:var(--wood);
+        border:2px solid var(--wood-d);border-radius:8px;opacity:.85;
+        background-image:repeating-linear-gradient(90deg,transparent 0 26px,rgba(0,0,0,.18) 26px 28px)}
+      .pen-fence{position:absolute;left:0;right:0;bottom:0;height:16px;background:var(--wood-d);
+        background-image:repeating-linear-gradient(90deg,transparent 0 18px,rgba(255,255,255,.16) 18px 21px)}
+      .pen-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+        color:#fff;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.4);text-align:center;padding:10px}
+      .animal{position:absolute;width:64px;margin-left:-32px;margin-top:-46px;text-align:center;
+        cursor:pointer;user-select:none;-webkit-user-select:none;z-index:2}
+      .animal .nm{display:inline-block;background:var(--chip);color:#5a4326;border:1px solid var(--wood);
+        font-size:10.5px;font-weight:700;border-radius:99px;padding:1px 7px;white-space:nowrap;
+        box-shadow:0 1px 3px rgba(0,0,0,.25)}
+      .animal .em{font-size:34px;line-height:1.15;display:block;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+      .animal .abar{width:44px;height:5px;background:rgba(0,0,0,.3);border-radius:99px;margin:1px auto 0;overflow:hidden}
+      .animal .abar>i{display:block;height:100%;background:#ffe066}
+      .animal .abar.full>i{background:#7be382}
+      .animal .rdy{position:absolute;top:12px;right:2px;font-size:15px}
+      .animal .bubble{position:absolute;left:50%;transform:translateX(-50%);top:-24px;background:#fff;color:#333;
+        font-size:11px;font-weight:700;border-radius:10px;padding:3px 8px;white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,.3);display:none;z-index:5}
+      .animal .bubble.show{display:block}
+      .animal-card{border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:9px;background:var(--card2)}
+      .animal-card.hl{outline:3px solid var(--amber);outline-offset:1px}
+      .cd{font-variant-numeric:tabular-nums;font-weight:700}
+
+      /* lists */
+      .inv-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px dashed var(--line)}
+      .inv-row:last-child{border-bottom:none}
+      .inv-row .em{font-size:26px}
+      .mission{border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:9px;background:var(--card2)}
+      .mission.done{opacity:.75}
+      .shop-item{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:9px;background:var(--card2)}
+      .price-tag{font-weight:800;color:var(--green-d)}
+      .gram-price{font-weight:800;color:#7a4fd0}
+      @media (prefers-color-scheme: dark){.gram-price{color:#c9aef7}.price-tag{color:var(--green-d)}}
+      .hist-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+      .hist-row:last-child{border-bottom:none}
+      code.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;font-weight:800;
+        letter-spacing:1px;background:var(--amber-soft);border:1px dashed var(--amber);
+        border-radius:10px;padding:8px 12px;display:inline-block}
+      .mile{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:14px;
+        padding:10px;margin-bottom:8px;background:var(--card2)}
+
+      /* toast & modal */
+      #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:99;
+        display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+      .toast{background:#2f2a1e;color:#fdf6dd;padding:9px 16px;border-radius:99px;font-size:13.5px;font-weight:600;
+        box-shadow:0 4px 14px rgba(0,0,0,.3);animation:tin .25s ease}
+      @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+      .modal-bg{position:fixed;inset:0;background:rgba(20,15,5,.55);z-index:100;display:none;
+        align-items:center;justify-content:center;padding:18px}
+      .modal-bg.open{display:flex}
+      .modal{background:var(--card);border-radius:18px;padding:18px;max-width:420px;width:100%}
+      .divider{height:1px;background:var(--line);margin:12px 0}
+      .lock-note{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:10px;font-size:13px}
+    </style>
+  </head>
+  <body>
+    <div class="statusbar">
+      <div class="statusbar-in">
+        <div class="sb-row">
+          <span class="sb-title">🌾 Farming Season</span>
+          <span class="pill">🪙 <span id="sb-coins">0</span></span>
+          <span class="pill gram">💎 <span id="sb-gram">0</span></span>
+          <button class="icon-btn" id="btn-music" title="Musik latar">🔇</button>
+        </div>
+        <div class="sb-row" style="margin-top:6px">
+          <span class="small muted" id="sb-player">Petani</span>
+          <span class="small">· Level <b id="sb-level">1</b></span>
+          <span class="small muted grow" id="sb-season"></span>
+          <span class="small muted"><span id="sb-xp">0</span> XP</span>
+        </div>
+        <div class="xpbar"><i id="sb-xpbar" style="width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <!-- TOWN HALL -->
+      <section class="card" id="townhall-card">
+        <div class="row-between">
+          <h2><span id="th-title">🏛️ Balai Kota — Level</span> <span id="th-level">1</span></h2>
+          <span class="pill" id="th-plots-pill">🌱 3 petak</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><b id="th-max">3</b><span id="th-stat-max">Petak maks level ini</span></div>
+          <div class="stat"><b id="th-owned">3</b><span id="th-stat-owned">Petak dimiliki</span></div>
+          <div class="stat"><b id="th-animals">0</b><span id="th-stat-animals">Hewan ternak</span></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn-green grow" id="btn-buy-plot">Beli Petak</button>
+          <button class="btn-amber grow" id="btn-upgrade-th">Upgrade Balai Kota</button>
+        </div>
+        <div class="row small" style="margin-top:8px">
+          <span class="muted" id="th-gram-label">💎 Tarik Gram:</span>
+          <b id="th-gram-status">Terkunci — butuh Balai Kota Lv 4</b>
+        </div>
+      </section>
+
+      <!-- KEBUN -->
+      <section class="tabpage active" id="page-kebun">
+        <div class="card">
+          <h2 id="garden-title">🌾 Kebun Saya</h2>
+          <div class="plot-grid" id="plot-grid"></div>
+        </div>
+        <div class="card">
+          <h2 id="seed-title">🌱 Pilih Benih</h2>
+          <p class="small muted" id="seed-help">Ketuk benih, lalu ketuk petak kosong untuk menanam. Ketuk tanaman yang siap untuk memanen.</p>
+          <div class="seed-grid" id="seed-grid"></div>
+          <p class="small muted" id="seed-lock-note" style="margin:10px 0 0"></p>
+        </div>
+      </section>
+
+      <!-- TERNAK -->
+      <section class="tabpage" id="page-ternak">
+        <div id="pens"></div>
+      </section>
+
+      <!-- PASAR -->
+      <section class="tabpage" id="page-pasar">
+        <div class="card">
+          <div class="row-between">
+            <h2 id="market-title">🏪 Pasar — Gudang Hasil</h2>
+            <button class="btn-green btn-small" id="btn-sell-all">Jual Semua</button>
+          </div>
+          <p class="small muted" id="market-desc">Jual hasil panen dan produk ternak dari gudang untuk mendapatkan koin.</p>
+          <div id="inv-list"></div>
+          <div class="divider"></div>
+          <div class="row-between"><b id="inv-total-label">Total nilai gudang</b><b class="price-tag" id="inv-total">0 🪙</b></div>
+        </div>
+      </section>
+
+      <!-- MISI -->
+      <section class="tabpage" id="page-misi">
+        <div class="card">
+          <h2 id="mission-title">📋 Misi Harian</h2>
+          <p class="small muted" id="mission-desc">Misi diperbarui setiap hari. Selesaikan dan klaim hadiahnya.</p>
+          <div id="mission-list"></div>
+        </div>
+      </section>
+
+      <!-- GRAM -->
+      <section class="tabpage" id="page-gram">
+        <div class="card">
+          <h2 id="wallet-title">👛 Dompet Gram (Simulasi)</h2>
+          <div class="row-between">
+            <div><div class="small muted" id="gram-bal-label">Saldo Gram</div><div style="font-size:22px;font-weight:800">💎 <span id="gram-bal">0</span></div></div>
+            <div style="text-align:right"><div class="small muted" id="wallet-addr-label">Alamat</div><b id="wallet-addr">Belum terhubung</b></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn-amber grow" id="btn-wallet">Hubungkan Dompet (Simulasi)</button>
+          </div>
+          <p class="tiny muted" style="margin-top:8px" id="wallet-note">Ini simulasi di dalam game — tidak ada Gram asli yang bergerak dan tidak ada dompet asli yang terhubung.</p>
+        </div>
+
+        <div class="card">
+          <h2 id="ex-title">🔄 Tukar Koin → Gram</h2>
+          <p class="small" id="ex-rate">Kurs: <b>10.000 🪙 = 0,01 Gram</b> · Minimal tukar 10.000 🪙</p>
+          <div class="row">
+            <input type="number" id="ex-input" min="10000" step="10000" placeholder="Jumlah koin, mis. 100000" class="grow" />
+            <button class="btn-green" id="btn-exchange">Tukar</button>
+          </div>
+          <p class="small muted" id="ex-preview" style="margin-top:6px"></p>
+        </div>
+
+        <div class="card">
+          <h2 id="wd-title">🏧 Tarik Gram</h2>
+          <p class="small" id="wd-info">Minimal tarik <b>0,5 Gram</b> · Terbuka di <b>Balai Kota Level 4</b></p>
+          <div id="withdraw-lock" class="lock-note">🔒 Penarikan Gram terkunci — naikkan Balai Kota ke Level 4 dulu.</div>
+          <div id="withdraw-form" style="display:none">
+            <div class="row">
+              <input type="number" id="wd-input" min="0.5" step="0.01" placeholder="Jumlah Gram, mis. 0.5" class="grow" />
+              <button class="btn-amber" id="btn-withdraw">Tarik</button>
+            </div>
+          </div>
+          <div id="wd-history"></div>
+        </div>
+
+        <div class="card">
+          <h2 id="shop-title">💎 Toko Premium</h2>
+          <div id="shop-list"></div>
+        </div>
+      </section>
+
+      <!-- TEMAN -->
+      <section class="tabpage" id="page-teman">
+        <div class="card">
+          <h2 id="invite-title">👥 Undang Teman</h2>
+          <p class="small" id="invite-desc">Bagikan kode undanganmu. Setiap teman yang bergabung memberimu <b>+100 🪙 +10 XP</b>.</p>
+          <div style="text-align:center;margin:12px 0"><code class="code" id="my-code">FARM-??????</code></div>
+          <div class="row">
+            <button class="btn-green grow" id="btn-copy-code">Salin Kode</button>
+            <button class="grow" id="btn-copy-msg">Salin Pesan Undangan</button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="grow" id="btn-share-wa">Bagikan via WhatsApp</button>
+            <button class="grow" id="btn-share-tg">Bagikan via Telegram</button>
+          </div>
+          <div class="divider"></div>
+          <h3 id="friend-heading">Teman yang bergabung pakai kodemu</h3>
+          <div class="row">
+            <input id="friend-name" placeholder="Nama teman yang bergabung" class="grow" />
+            <button class="btn-amber" id="btn-add-friend">Catat Teman</button>
+          </div>
+          <p class="small muted" style="margin-top:6px"><span id="friend-joined-label">Sudah bergabung:</span> <b id="friend-count">0</b> <span id="friend-joined-unit">teman</span></p>
+          <div id="friend-list"></div>
+        </div>
+
+        <div class="card">
+          <h2 id="mile-title">🏆 Tonggak Undangan</h2>
+          <p class="small muted" id="mile-desc">Total hadiah Gram dari semua tonggak maksimal <b>0,08 Gram</b>.</p>
+          <div id="mile-list"></div>
+        </div>
+
+        <div class="card">
+          <h2 id="redeem-title">🎁 Punya Kode Teman?</h2>
+          <p class="small" id="redeem-desc">Masukkan kode undangan teman untuk bonus sambutan <b>+150 🪙 +25 XP</b> (sekali pakai).</p>
+          <div class="row">
+            <input id="redeem-input" placeholder="FARM-XXXXXX" class="grow" style="text-transform:uppercase" />
+            <button class="btn-green" id="btn-redeem">Tukar Kode</button>
+          </div>
+          <p class="small" id="redeem-status" style="margin-top:6px"></p>
+        </div>
+      </section>
+
+      <div class="card">
+        <div class="row-between">
+          <span class="small muted" id="footer-note">Progres tersimpan otomatis di perangkat ini.</span>
+          <button class="btn-danger btn-small" id="btn-reset">Mulai Ulang Game</button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tabbar">
+      <button data-tab="kebun" class="active"><span class="tic">🌾</span><span class="tab-label">Kebun</span></button>
+      <button data-tab="ternak"><span class="tic">🐄</span><span class="tab-label">Ternak</span><span class="tab-badge" id="badge-ternak" style="display:none">0</span></button>
+      <button data-tab="pasar"><span class="tic">🏪</span><span class="tab-label">Pasar</span></button>
+      <button data-tab="misi"><span class="tic">📋</span><span class="tab-label">Misi</span><span class="tab-badge" id="badge-misi" style="display:none">0</span></button>
+      <button data-tab="gram"><span class="tic">💎</span><span class="tab-label">Gram</span></button>
+      <button data-tab="teman"><span class="tic">👥</span><span class="tab-label">Teman</span><span class="tab-badge" id="badge-teman" style="display:none">0</span></button>
+    </nav>
+
+    <div id="toasts"></div>
+    <div class="modal-bg" id="reset-modal">
+      <div class="modal">
+        <h2 id="reset-title">Mulai ulang game?</h2>
+        <p class="small" id="reset-desc">Semua progres (koin, kebun, ternak, Gram, undangan) di perangkat ini akan dihapus dan mulai dari awal. Tindakan ini tidak bisa dibatalkan.</p>
+        <div class="row" style="margin-top:12px">
+          <button class="grow" id="btn-reset-cancel">Batal</button>
+          <button class="btn-danger grow" id="btn-reset-ok">Ya, Mulai Ulang</button>
+        </div>
+      </div>
+    </div>
+
+<script>
+"use strict";
+/* ================= DATA ================= */
+var CROPS = [
+  {id:"wortel",   name:"Wortel", nameEn:"Carrot",   em:"🥕", seed:10, sell:18,  grow:10*60, xp:3,  thReq:1},
+  {id:"kentang",  name:"Kentang", nameEn:"Potato",  em:"🥔", seed:15, sell:28,  grow:15*60, xp:4,  thReq:1},
+  {id:"tomat",    name:"Tomat", nameEn:"Tomato",    em:"🍅", seed:20, sell:38,  grow:20*60, xp:5,  thReq:1},
+  {id:"stroberi", name:"Stroberi", nameEn:"Strawberry", em:"🍓", seed:35, sell:65,  grow:25*60, xp:8,  thReq:3},
+  {id:"jagung",   name:"Jagung", nameEn:"Corn",   em:"🌽", seed:30, sell:55,  grow:30*60, xp:7,  thReq:2},
+  {id:"labu",     name:"Labu", nameEn:"Pumpkin",     em:"🎃", seed:50, sell:95,  grow:40*60, xp:10, thReq:3},
+  {id:"apel",     name:"Apel", nameEn:"Apple",     em:"🍎", seed:60, sell:115, grow:45*60, xp:12, thReq:4},
+  {id:"semangka", name:"Semangka", nameEn:"Watermelon", em:"🍉", seed:75, sell:145, grow:50*60, xp:14, thReq:4},
+  {id:"anggur",   name:"Anggur", nameEn:"Grape",   em:"🍇", seed:90, sell:175, grow:60*60, xp:16, thReq:5}
+];
+var ANIMALS = {
+  ayam:  {name:"Ayam", nameEn:"Chicken",  em:"🐔", buy:120, sellBack:60,  thReq:1, cycle:5*60,  feed:15, product:"telur", pem:"🥚", pname:"Telur", pnameEn:"Egg", psell:8,  sound:"Petok petok petok!", soundEn:"Cluck cluck cluck!"},
+  sapi:  {name:"Sapi", nameEn:"Cow",  em:"🐄", buy:350, sellBack:175, thReq:2, cycle:10*60, feed:45, product:"susu",  pem:"🥛", pname:"Susu", pnameEn:"Milk",  psell:25, sound:"Moooo!", soundEn:"Moooo!"},
+  domba: {name:"Domba", nameEn:"Sheep", em:"🐑", buy:300, sellBack:150, thReq:3, cycle:15*60, feed:65, product:"wol",   pem:"🧶", pname:"Wol", pnameEn:"Wool",   psell:35, sound:"Mbeeek!", soundEn:"Baaa!"}
+};
+var TH_MAXPLOTS = [3,12,16,20,25];
+var TH_UPGRADE  = [0,20000,30000,40000,50000]; /* index = level tujuan */
+var FEED_STOCK_MAX = 20, FED_MAX_MS = 60*60*1000, ANIMAL_MAX = 5;
+var GRAM_PER_10000 = 0.01; /* 10.000 koin = 0,01 Gram */
+var MISSION_POOL = [
+  {key:"plant",   label:"Tanam benih", labelEn:"Plant seeds",        target:5,  rc:150, rx:10},
+  {key:"harvest", label:"Panen tanaman", labelEn:"Harvest crops",      target:5,  rc:200, rx:12},
+  {key:"sell",    label:"Jual item di pasar", labelEn:"Sell items at the market", target:10, rc:250, rx:12},
+  {key:"feed",    label:"Beri pakan hewan", labelEn:"Feed animals",   target:3,  rc:180, rx:10},
+  {key:"collect", label:"Ambil produk hewan", labelEn:"Collect animal products", target:5,  rc:220, rx:12}
+];
+var MILESTONES = [
+  {n:1,  rc:300,  rx:20, rg:0},
+  {n:3,  rc:500,  rx:30, rg:0.01},
+  {n:5,  rc:800,  rx:40, rg:0.02},
+  {n:10, rc:1500, rx:60, rg:0.05}
+];
+var SHOP = [
+  {id:"pupuk", name:"✨ Pupuk Ajaib", nameEn:"✨ Magic Fertilizer", desc:"Semua tanaman yang sedang tumbuh langsung siap panen.", descEn:"All crops currently growing become ready to harvest instantly.", coins:300000, gram:0.15},
+  {id:"percepat", name:"⏩ Percepat Semua Panen", nameEn:"⏩ Speed Up All Harvests", desc:"Sisa waktu tumbuh semua tanaman dipotong 50%.", descEn:"The remaining growing time of all crops is cut by 50%.", coins:150000, gram:0.08},
+  {id:"paket-kecil", name:"🪙 Paket Koin Kecil", nameEn:"🪙 Small Coin Pack", desc:"+50.000 koin. Hanya bisa dibeli dengan Gram.", descEn:"+50,000 coins. Can only be bought with Gram.", coins:0, gram:0.10, give:50000},
+  {id:"paket-sedang", name:"🪙 Paket Koin Sedang", nameEn:"🪙 Medium Coin Pack", desc:"+300.000 koin. Hanya bisa dibeli dengan Gram.", descEn:"+300,000 coins. Can only be bought with Gram.", coins:0, gram:0.50, give:300000},
+  {id:"paket-besar", name:"🪙 Paket Koin Besar", nameEn:"🪙 Large Coin Pack", desc:"+700.000 koin. Hanya bisa dibeli dengan Gram.", descEn:"+700,000 coins. Can only be bought with Gram.", coins:0, gram:1.00, give:700000}
+];
+var SEASONS = [{id:"🌸 Semi",en:"🌸 Spring"},{id:"☀️ Panas",en:"☀️ Summer"},{id:"🍂 Gugur",en:"🍂 Autumn"},{id:"❄️ Dingin",en:"❄️ Winter"}];
+var SAVE_KEY = "farming-season-mini-app-v1";
+
+/* ================= TELEGRAM ================= */
+var TG = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+var tgUserName = ""; var tgLangCode = "";
+function applyTgViewport() {
+  if (!TG) return;
+  try {
+    var rs = document.documentElement.style;
+    var h = TG.viewportStableHeight || TG.viewportHeight;
+    if (h && h > 0) {
+      rs.setProperty("--app-height", h + "px");
+      rs.setProperty("--tg-viewport-height", h + "px");
+      rs.setProperty("--tg-viewport-stable-height", h + "px");
+    }
+    /* Header Telegram melayang di mode fullscreen: beri ruang di atas
+       sebesar safe area perangkat + content safe area Telegram supaya
+       status bar game tidak tertutup / terpotong header Telegram. */
+    var sa = TG.safeAreaInset || {}, ca = TG.contentSafeAreaInset || {};
+    var topInset = (Number(sa.top) || 0) + (Number(ca.top) || 0);
+    var bottomInset = (Number(sa.bottom) || 0) + (Number(ca.bottom) || 0);
+    if (TG.safeAreaInset || TG.contentSafeAreaInset) {
+      rs.setProperty("--app-safe-top", topInset + "px");
+      if (bottomInset > 0) rs.setProperty("--app-safe-bottom", bottomInset + "px");
+    }
+    if (document.body) document.body.classList.toggle("tg-fullscreen", !!TG.isFullscreen);
+  } catch(e) {}
+}
+function tgGoFullscreen() {
+  if (!TG) return;
+  try { if (TG.expand) TG.expand(); } catch(e) {}
+  try { if (TG.disableVerticalSwipes) TG.disableVerticalSwipes(); } catch(e) {}
+  try {
+    if (TG.requestFullscreen && !TG.isFullscreen) {
+      var p = TG.requestFullscreen();
+      if (p && p.catch) p.catch(function(){});
+    }
+  } catch(e) {}
+  applyTgViewport();
+}
+if (TG) {
+  try {
+    TG.ready();
+    tgGoFullscreen();
+    if (TG.initDataUnsafe && TG.initDataUnsafe.user) { tgUserName = TG.initDataUnsafe.user.first_name || ""; tgLangCode = TG.initDataUnsafe.user.language_code || ""; }
+    var tp = TG.themeParams || {};
+    var root = document.documentElement.style;
+    if (tp.bg_color) root.setProperty("--bg", tp.bg_color);
+    if (tp.secondary_bg_color) root.setProperty("--card", tp.secondary_bg_color);
+    if (tp.text_color) root.setProperty("--ink", tp.text_color);
+    if (tp.hint_color) root.setProperty("--muted", tp.hint_color);
+    if (tp.button_color) root.setProperty("--green", tp.button_color);
+    /* Samakan warna header / latar Telegram dengan game agar tidak ada
+       ruang kosong berwarna beda di atas / bawah saat fullscreen. */
+    try { if (TG.setHeaderColor) TG.setHeaderColor(tp.bg_color || "#f7efdb"); } catch(e) {}
+    try { if (TG.setBackgroundColor) TG.setBackgroundColor(tp.bg_color || "#f7efdb"); } catch(e) {}
+    try { if (TG.setBottomBarColor) TG.setBottomBarColor(tp.secondary_bg_color || tp.bg_color || "#fffaf0"); } catch(e) {}
+    if (TG.onEvent) {
+      TG.onEvent("viewportChanged", applyTgViewport);
+      TG.onEvent("fullscreenChanged", applyTgViewport);
+      TG.onEvent("fullscreenFailed", applyTgViewport);
+      TG.onEvent("safeAreaChanged", applyTgViewport);
+      TG.onEvent("contentSafeAreaChanged", applyTgViewport);
+    }
+    applyTgViewport();
+    /* Sebagian client menolak fullscreen sebelum interaksi pertama:
+       coba lagi sekali pada ketukan pertama bila belum fullscreen. */
+    var retryFs = function(){
+      document.removeEventListener("pointerdown", retryFs);
+      if (!TG.isFullscreen) tgGoFullscreen(); else applyTgViewport();
+    };
+    document.addEventListener("pointerdown", retryFs);
+    window.addEventListener("resize", applyTgViewport);
+  } catch(e) {}
+}
+/* ================= BAHASA / LANGUAGE =================
+   Bahasa otomatis mengikuti bahasa Telegram pemain: Indonesia bila bahasa
+   Telegram-nya Indonesia, Inggris bila bahasa Telegram-nya Inggris atau
+   bahasa lain; tanpa data Telegram: Indonesia. Tidak ada pilihan manual. */
+var LANG = tgLangCode ? (tgLangCode.toLowerCase().indexOf("id") === 0 ? "id" : "en") : "id";
+function tr(idText, enText){ return LANG === "en" ? enText : idText; }
+function cName(c){ return LANG === "en" ? (c.nameEn || c.name) : c.name; }
+function aName(A){ return LANG === "en" ? (A.nameEn || A.name) : A.name; }
+function pName(A){ return LANG === "en" ? (A.pnameEn || A.pname) : A.pname; }
+function aPlural(type){ if (LANG !== "en") return type; return type === "ayam" ? "chickens" : type === "sapi" ? "cows" : "sheep"; }
+function mLabel(m){
+  if (LANG !== "en") return m.label;
+  if (m.labelEn) return m.labelEn;
+  for (var i=0;i<MISSION_POOL.length;i++) if (MISSION_POOL[i].key === m.key) return MISSION_POOL[i].labelEn;
+  return m.label;
+}
+function shopName(it){ return LANG === "en" ? (it.nameEn || it.name) : it.name; }
+function shopDesc(it){ return LANG === "en" ? (it.descEn || it.desc) : it.desc; }
+function haptic(type) {
+  if (!TG || !TG.HapticFeedback) return;
+  try {
+    if (type === "success") TG.HapticFeedback.notificationOccurred("success");
+    else if (type === "error") TG.HapticFeedback.notificationOccurred("error");
+    else TG.HapticFeedback.impactOccurred("light");
+  } catch(e) {}
+}
+
+/* ================= STATE ================= */
+function todayStr() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function genCode() {
+  var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
+  for (var i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return "FARM-" + s;
+}
+function freshState() {
+  return {
+    coins: 1000, gram: 0, xp: 0,
+    th: 1, plotsOwned: 3,
+    plots: [], /* {crop, plantedAt, readyAt} atau null */
+    selectedSeed: "wortel",
+    inv: {}, /* itemId -> jumlah (tanaman + telur/susu/wol) */
+    animals: [], /* {uid,type,num,fedUntil,nextAt,remainingMs,ready} */
+    feedStock: {ayam:0, sapi:0, domba:0},
+    animalSeq: {ayam:0, sapi:0, domba:0},
+    daily: null,
+    inviteCode: genCode(), friends: [], milesClaimed: [], redeemed: false,
+    wallet: false, withdrawals: [],
+    musicOn: false, startDate: todayStr(), selAnimal: null, lang: LANG
+  };
+}
+var S;
+function loadState() {
+  try {
+    var raw = localStorage.getItem(SAVE_KEY);
+    if (raw) { S = Object.assign(freshState(), JSON.parse(raw)); }
+    else S = freshState();
+  } catch(e) { S = freshState(); }
+}
+var saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){} }, 150);
+}
+function saveNow() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch(e){} }
+
+/* misi harian */
+function ensureDaily() {
+  var t = todayStr();
+  if (S.daily && S.daily.date === t) return;
+  var pool = MISSION_POOL.slice();
+  var picks = [];
+  var seed = 0; for (var i=0;i<t.length;i++) seed += t.charCodeAt(i)*(i+1);
+  for (var k=0;k<3;k++) { var idx = (seed + k*3) % pool.length; picks.push(pool.splice(idx,1)[0]); }
+  S.daily = { date: t, counts: {plant:0,harvest:0,sell:0,feed:0,collect:0},
+    missions: picks.map(function(m){ return {key:m.key,label:m.label,labelEn:m.labelEn,target:m.target,rc:m.rc,rx:m.rx,claimed:false}; }) };
+}
+function track(key, n) {
+  ensureDaily();
+  S.daily.counts[key] = (S.daily.counts[key]||0) + n;
+}
+
+/* ================= HELPERS ================= */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(ch){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]; }); }
+function fmt(n){ return Math.floor(n).toLocaleString(LANG === "en" ? "en-US" : "id-ID"); }
+function fmtGram(g){ return (Math.round(g*10000)/10000).toLocaleString(LANG === "en" ? "en-US" : "id-ID",{minimumFractionDigits:2, maximumFractionDigits:4}); }
+function mmss(ms){ if (ms<0) ms=0; var s=Math.ceil(ms/1000); return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+function cropById(id){ for (var i=0;i<CROPS.length;i++) if (CROPS[i].id===id) return CROPS[i]; return null; }
+function itemInfo(id){
+  var c = cropById(id); if (c) return {name:cName(c), em:c.em, sell:c.sell};
+  for (var k in ANIMALS) if (ANIMALS[k].product===id) return {name:pName(ANIMALS[k]), em:ANIMALS[k].pem, sell:ANIMALS[k].psell};
+  return {name:id, em:"📦", sell:0};
+}
+function playerLevel(){ return Math.floor(Math.sqrt(S.xp/50)) + 1; }
+function xpForLevel(l){ return (l-1)*(l-1)*50; }
+function addXp(n){
+  var before = playerLevel(); S.xp += n;
+  if (playerLevel() > before) { toast(tr("🎉 Naik ke Level ", "🎉 Reached Level ") + playerLevel() + "!"); haptic("success"); }
+}
+function toast(msg){
+  var t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  $("toasts").appendChild(t);
+  setTimeout(function(){ t.style.opacity="0"; t.style.transition="opacity .3s"; }, 2400);
+  setTimeout(function(){ t.remove(); }, 2800);
+}
+function spendCoins(n){ if (S.coins < n) { toast(tr("🪙 Koin tidak cukup", "🪙 Not enough coins")); haptic("error"); return false; } S.coins -= n; return true; }
+
+/* ================= AUDIO: MUSIK + SUARA HEWAN ================= */
+var AC = null;
+function audioCtx(){ if (!AC) { try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } if (AC && AC.state==="suspended") AC.resume(); return AC; }
+/* Melodi taman lembut di G mayor: G–C–G–D–Em–C–G–D, pelan */
+var CHORDS = [
+  [196.00,246.94,293.66],[130.81,164.81,196.00],[196.00,246.94,293.66],[146.83,220.00,293.66],
+  [164.81,196.00,246.94],[130.81,164.81,196.00],[196.00,246.94,293.66],[146.83,220.00,293.66]
+];
+var musicTimer = null, chordIdx = 0;
+function playChord(freqs){
+  var ac = audioCtx(); if (!ac) return;
+  var t = ac.currentTime;
+  freqs.forEach(function(f, i){
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t + i*0.45);
+    g.gain.linearRampToValueAtTime(0.055, t + i*0.45 + 0.25);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i*0.45 + 2.6);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t + i*0.45); o.stop(t + i*0.45 + 2.8);
+  });
+}
+function startMusic(){
+  if (musicTimer) return;
+  playChord(CHORDS[chordIdx % CHORDS.length]); chordIdx++;
+  musicTimer = setInterval(function(){ playChord(CHORDS[chordIdx % CHORDS.length]); chordIdx++; }, 3400);
+}
+function stopMusic(){ if (musicTimer) { clearInterval(musicTimer); musicTimer = null; } }
+function animalSound(type){
+  var ac = audioCtx(); if (!ac) return;
+  var t = ac.currentTime;
+  if (type === "ayam") { /* petok: ketukan pendek beruntun */
+    [0,0.16,0.34,0.5].forEach(function(off){
+      var o=ac.createOscillator(), g=ac.createGain();
+      o.type="square"; o.frequency.setValueAtTime(720, t+off); o.frequency.exponentialRampToValueAtTime(420, t+off+0.08);
+      g.gain.setValueAtTime(0.06, t+off); g.gain.exponentialRampToValueAtTime(0.001, t+off+0.09);
+      o.connect(g); g.connect(ac.destination); o.start(t+off); o.stop(t+off+0.1);
+    });
+  } else if (type === "sapi") { /* moo: nada rendah turun perlahan */
+    var o=ac.createOscillator(), g=ac.createGain();
+    o.type="sawtooth"; o.frequency.setValueAtTime(160, t); o.frequency.linearRampToValueAtTime(105, t+0.85);
+    var f=ac.createBiquadFilter(); f.type="lowpass"; f.frequency.value=420;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t+0.15); g.gain.exponentialRampToValueAtTime(0.001, t+0.95);
+    o.connect(f); f.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+1);
+  } else { /* domba: mbeeek bergetar */
+    var o=ac.createOscillator(), g=ac.createGain(), lfo=ac.createOscillator(), lg=ac.createGain();
+    o.type="sawtooth"; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(430, t+0.7);
+    lfo.frequency.value=22; lg.gain.value=45; lfo.connect(lg); lg.connect(o.frequency);
+    var f2=ac.createBiquadFilter(); f2.type="lowpass"; f2.frequency.value=900;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t+0.1); g.gain.exponentialRampToValueAtTime(0.001, t+0.8);
+    o.connect(f2); f2.connect(g); g.connect(ac.destination);
+    o.start(t); lfo.start(t); o.stop(t+0.85); lfo.stop(t+0.85);
+  }
+}
+</script>
+
+<script>
+"use strict";
+/* ================= LOGIKA HEWAN ================= */
+function nowMs(){ return Date.now(); }
+function isFed(a){ return a.fedUntil && a.fedUntil > nowMs(); }
+function settleAnimal(a){
+  /* perbarui status produksi berdasarkan waktu nyata */
+  var t = nowMs(), A = ANIMALS[a.type];
+  if (a.ready) return;
+  if (a.nextAt) {
+    if (t >= a.nextAt && a.fedUntil >= a.nextAt) { a.ready = true; a.nextAt = null; a.remainingMs = A.cycle*1000; }
+    else if (a.fedUntil && t >= a.fedUntil && a.nextAt > a.fedUntil) {
+      a.remainingMs = a.nextAt - a.fedUntil; a.nextAt = null; /* lapar: jeda */
+    }
+  }
+}
+function feedAnimal(a){
+  var A = ANIMALS[a.type];
+  if ((S.feedStock[a.type]||0) <= 0) { toast(tr("Stok pakan " + aName(A).toLowerCase() + " habis — beli dulu", "Out of " + aName(A).toLowerCase() + " feed — buy some first")); haptic("error"); return; }
+  var t = nowMs();
+  var cur = isFed(a) ? (a.fedUntil - t) : 0;
+  var add = 2 * A.cycle * 1000; /* 1 pakan = 2 siklus produksi */
+  if (cur + add > FED_MAX_MS) { toast(tr("⏱️ Waktu kenyang sudah maksimal 1 jam", "⏱️ Feed time is already at the 1-hour maximum")); haptic("error"); return; }
+  S.feedStock[a.type]--;
+  a.fedUntil = t + cur + add;
+  if (!a.ready && !a.nextAt) { a.nextAt = t + (a.remainingMs != null ? a.remainingMs : A.cycle*1000); }
+  track("feed", 1); addXp(1);
+  toast(A.em + " " + aName(A) + " #" + a.num + " " + tr("diberi pakan", "fed")); haptic();
+  save(); renderAll();
+}
+function collectAnimal(a, silent){
+  var A = ANIMALS[a.type];
+  if (!a.ready) return false;
+  a.ready = false;
+  S.inv[A.product] = (S.inv[A.product]||0) + 1;
+  var t = nowMs();
+  if (isFed(a)) { a.nextAt = t + A.cycle*1000; a.remainingMs = A.cycle*1000; }
+  else { a.nextAt = null; a.remainingMs = A.cycle*1000; }
+  track("collect", 1); addXp(2);
+  if (!silent) { toast(A.pem + " " + pName(A) + " " + tr("diambil", "collected")); haptic("success"); }
+  return true;
+}
+
+/* ================= RENDER: STATUS & BALAI KOTA ================= */
+function renderStatus(){
+  $("sb-coins").textContent = fmt(S.coins);
+  $("sb-gram").textContent = fmtGram(S.gram);
+  $("sb-level").textContent = playerLevel();
+  $("sb-xp").textContent = fmt(S.xp);
+  var lv = playerLevel(), cur = xpForLevel(lv), nxt = xpForLevel(lv+1);
+  $("sb-xpbar").style.width = Math.min(100, (S.xp-cur)/(nxt-cur)*100) + "%";
+  $("sb-player").textContent = tgUserName ? (tr("👋 Halo, ", "👋 Hello, ") + tgUserName) : tr("👨‍🌾 Petani", "👨‍🌾 Farmer");
+  var start = new Date(S.startDate + "T00:00:00");
+  var days = Math.max(0, Math.floor((new Date(todayStr()+"T00:00:00") - start)/86400000));
+  var season = SEASONS[Math.floor(days/3) % 4];
+  $("sb-season").textContent = tr("Hari ke-", "Day ") + (days+1) + " · " + season[LANG];
+  $("btn-music").textContent = S.musicOn ? "🎵" : "🔇";
+}
+function renderTH(){
+  $("th-level").textContent = S.th;
+  $("th-max").textContent = TH_MAXPLOTS[S.th-1];
+  $("th-owned").textContent = S.plotsOwned;
+  $("th-plots-pill").textContent = "🌱 " + S.plotsOwned + " " + tr("petak", "plots");
+  $("th-animals").textContent = S.animals.length;
+  var bp = $("btn-buy-plot");
+  if (S.plotsOwned >= TH_MAXPLOTS[S.th-1]) { bp.disabled = true; bp.textContent = S.th >= 5 ? tr("Petak Maksimal (25)", "Max Plots (25)") : tr("Petak Penuh — Upgrade Balai Kota", "Plots Full — Upgrade Town Hall"); }
+  else { var price = (S.plotsOwned - 3 + 1) * 1000; bp.disabled = false; bp.textContent = tr("Beli Petak · ", "Buy Plot · ") + fmt(price) + " 🪙"; }
+  var up = $("btn-upgrade-th");
+  if (S.th >= 5) { up.disabled = true; up.textContent = tr("Balai Kota Level Maksimal (5)", "Town Hall at Max Level (5)"); }
+  else { up.disabled = false; up.textContent = tr("Upgrade ke Lv ", "Upgrade to Lv ") + (S.th+1) + " · " + fmt(TH_UPGRADE[S.th]) + " 🪙"; }
+  var ok = S.th >= 4;
+  $("th-gram-status").textContent = ok ? tr("Terbuka ✓ (min. tarik 0,5 Gram)", "Unlocked ✓ (min. withdrawal 0.5 Gram)") : tr("Terkunci — butuh Balai Kota Lv 4", "Locked — requires Town Hall Lv 4");
+  $("withdraw-lock").style.display = ok ? "none" : "block";
+  $("withdraw-form").style.display = ok ? "block" : "none";
+}
+
+/* ================= RENDER: KEBUN ================= */
+function renderSeeds(){
+  var g = $("seed-grid"); g.innerHTML = "";
+  var note = $("seed-lock-note");
+  if (note) {
+    var lockedCrops = CROPS.filter(function(c){ return S.th < (c.thReq || 1); }).slice().sort(function(a,b){ return (a.thReq||1) - (b.thReq||1); });
+    if (lockedCrops.length) {
+      note.style.display = "";
+      note.textContent = tr("🔒 Belum terbuka: ", "🔒 Not unlocked yet: ") + lockedCrops.map(function(c){ return cName(c) + " (TH " + c.thReq + ")"; }).join(", ");
+    } else {
+      note.style.display = "none";
+      note.textContent = "";
+    }
+  }
+  CROPS.forEach(function(c){
+    var locked = S.th < (c.thReq || 1);
+    var b = document.createElement("button");
+    b.className = "seed" + (!locked && S.selectedSeed === c.id ? " sel" : "");
+    if (locked) {
+      b.disabled = true;
+      b.innerHTML = '<span class="em">🔒</span><b>' + cName(c) + '</b><span>' + tr("Terkunci", "Locked") + '</span><span>' + tr("Terbuka di Balai Kota Lv ", "Unlocks at Town Hall Lv ") + c.thReq + '</span>';
+    } else {
+      b.innerHTML = '<span class="em">' + c.em + '</span><b>' + cName(c) + '</b><span>' + tr("Benih ", "Seed ") + c.seed + ' 🪙 · ' + tr("Jual ", "Sell ") + c.sell + ' 🪙</span><span>⏱️ ' + (c.grow/60) + ' ' + tr("menit", "min") + '</span>';
+      b.onclick = function(){ S.selectedSeed = c.id; haptic(); save(); renderSeeds(); };
+    }
+    g.appendChild(b);
+  });
+}
+function renderPlots(){
+  var g = $("plot-grid"); g.innerHTML = "";
+  var t = nowMs();
+  for (var i=0;i<S.plotsOwned;i++) {
+    var p = S.plots[i] || null;
+    var b = document.createElement("button");
+    if (!p) {
+      b.className = "plot empty";
+      b.innerHTML = '<span class="em">🟫</span><b>' + tr("Petak Kosong", "Empty Plot") + '</b><span>' + tr("Ketuk untuk menanam", "Tap to plant") + '</span>';
+    } else {
+      var c = cropById(p.crop);
+      var ready = t >= p.readyAt;
+      var pct = Math.min(100, Math.max(0, (t - p.plantedAt) / (p.readyAt - p.plantedAt) * 100));
+      b.className = "plot " + (ready ? "ready" : "growing");
+      b.innerHTML = '<span class="em">' + (ready ? c.em : "🌱") + '</span><b>' + cName(c) + '</b>' +
+        '<span class="cd">' + (ready ? tr("✅ Siap panen!", "✅ Ready to harvest!") : mmss(p.readyAt - t)) + '</span>' +
+        '<span class="pbar"><i style="width:' + pct + '%"></i></span>';
+    }
+    (function(idx){ b.onclick = function(){ plotTap(idx); }; })(i);
+    g.appendChild(b);
+  }
+}
+function plotTap(i){
+  var p = S.plots[i];
+  var t = nowMs();
+  if (!p) {
+    var c = cropById(S.selectedSeed);
+    if (S.th < (c.thReq || 1)) { toast(tr("🔒 " + cName(c) + " terkunci — terbuka di Balai Kota Lv " + c.thReq, "🔒 " + cName(c) + " is locked — unlocks at Town Hall Lv " + c.thReq)); haptic("error"); return; }
+    if (!spendCoins(c.seed)) { renderStatus(); return; }
+    S.plots[i] = { crop: c.id, plantedAt: t, readyAt: t + c.grow*1000 };
+    track("plant", 1); addXp(1);
+    toast(c.em + " " + cName(c) + " " + tr("ditanam", "planted")); haptic();
+  } else if (t >= p.readyAt) {
+    var c2 = cropById(p.crop);
+    S.inv[c2.id] = (S.inv[c2.id]||0) + 1;
+    S.plots[i] = null;
+    track("harvest", 1); addXp(c2.xp);
+    toast(c2.em + " " + cName(c2) + " " + tr("dipanen → gudang", "harvested → storage")); haptic("success");
+  } else {
+    toast(tr("⏱️ Belum siap — tunggu ", "⏱️ Not ready yet — wait ") + mmss(p.readyAt - t)); haptic();
+    return;
+  }
+  save(); renderAll();
+}
+
+/* ================= RENDER: TERNAK ================= */
+var penPos = {}; /* uid -> {x,y,vx,vy} */
+function renderPens(){
+  var wrap = $("pens"); wrap.innerHTML = "";
+  Object.keys(ANIMALS).forEach(function(type){
+    var A = ANIMALS[type];
+    var list = S.animals.filter(function(a){ return a.type === type; });
+    list.forEach(settleAnimal);
+    var readyCount = list.filter(function(a){ return a.ready; }).length;
+    var locked = S.th < (A.thReq || 1);
+    var card = document.createElement("div"); card.className = "card";
+    var html = '<div class="row-between"><h2>' + (type==="ayam"?("🐔 " + tr("Kandang Ayam", "Chicken Pen")):type==="sapi"?("🐄 " + tr("Kandang Sapi", "Cow Pen")):("🐑 " + tr("Kandang Domba", "Sheep Pen"))) + (locked ? ' 🔒' : '') + '</h2>' +
+      '<span class="pill">' + list.length + ' / ' + ANIMAL_MAX + '</span></div>';
+    html += '<div class="pen"><div class="pen-grass" data-pen="' + type + '"><div class="pen-floor"></div>';
+    if (!list.length) html += '<div class="pen-empty">' + (locked ? tr('Belum ada ' + type + ' — kategori ini terbuka di Balai Kota Lv ' + A.thReq + '.', 'No ' + aPlural(type) + ' yet — this category unlocks at Town Hall Lv ' + A.thReq + '.') : tr('Belum ada ' + type + ' di kandang ini.', 'No ' + aPlural(type) + ' in this pen yet.')) + '</div>';
+    html += '<div class="pen-fence"></div></div></div>';
+    if (locked) html += '<p class="small muted" style="margin-bottom:8px">' + tr("🔒 Terkunci — butuh Balai Kota Lv ", "🔒 Locked — requires Town Hall Lv ") + A.thReq + '</p>';
+    /* panel pakan — disembunyikan saat terkunci dan belum punya hewan, sama seperti game utama */
+    if (!locked || list.length) {
+    html += '<div class="row-between" style="margin-bottom:8px"><span class="small">🌾 ' + tr("Stok pakan: ", "Feed stock: ") + '<b>' + (S.feedStock[type]||0) + ' / ' + FEED_STOCK_MAX + '</b> · ' + tr("1 pakan = ", "1 feed = ") + A.feed + ' 🪙</span>' +
+      '<button class="btn-small btn-amber" data-act="buyfeed" data-type="' + type + '"' + ((S.feedStock[type]||0) >= FEED_STOCK_MAX ? " disabled" : "") + '>' +
+      ((S.feedStock[type]||0) >= FEED_STOCK_MAX ? tr("Stok Penuh", "Stock Full") : tr("Beli Pakan · ", "Buy Feed · ") + A.feed + " 🪙") + '</button></div>';
+    }
+    html += '<div class="row" style="margin-bottom:10px"><button class="btn-green grow" data-act="collectall" data-type="' + type + '"' + (readyCount ? "" : " disabled") + '>🧺 ' + tr("Ambil Semua", "Collect All") + (readyCount ? ' · ' + readyCount + ' ' + A.pem : '') + '</button>' +
+      '<button class="btn-amber grow" data-act="buyanimal" data-type="' + type + '"' + ((locked || list.length >= ANIMAL_MAX) ? " disabled" : "") + '>' + (locked ? ('🔒 TH ' + A.thReq) : (tr("Beli ", "Buy ") + aName(A) + ' · ' + fmt(A.buy) + ' 🪙')) + '</button></div>';
+    if (readyCount) html += '<p class="small muted">' + tr('Ada ' + readyCount + ' produk siap dari ' + list.filter(function(a){return a.ready;}).length + ' hewan di kandang ini.', readyCount + ' products ready from ' + list.filter(function(a){return a.ready;}).length + ' animals in this pen.') + '</p>';
+    html += '<div id="cards-' + type + '"></div>';
+    card.innerHTML = html;
+    wrap.appendChild(card);
+    /* hewan bergerak di kandang */
+    var grass = card.querySelector(".pen-grass");
+    list.forEach(function(a, idx){
+      var el = document.createElement("div");
+      el.className = "animal"; el.dataset.uid = a.uid;
+      el.innerHTML = '<span class="bubble"></span><span class="nm">' + aName(A) + ' #' + a.num + '</span>' +
+        '<span class="em">' + A.em + '</span>' + (a.ready ? '<span class="rdy">' + A.pem + '</span>' : '') +
+        '<span class="abar' + (a.ready ? " full" : "") + '"><i style="width:' + animalProgress(a) + '%"></i></span>';
+      if (!penPos[a.uid]) penPos[a.uid] = { x: 15 + (idx*23)%70, y: 42 + (idx*17)%34, vx: (Math.random()<.5?-1:1)*(0.05+Math.random()*0.05), vy: (Math.random()<.5?-1:1)*0.03 };
+      el.style.left = penPos[a.uid].x + "%"; el.style.top = penPos[a.uid].y + "%";
+      el.onclick = function(){ tapAnimal(a, el); };
+      grass.appendChild(el);
+    });
+    /* kartu detail */
+    var cwrap = card.querySelector("#cards-" + type);
+    list.forEach(function(a){
+      var d = document.createElement("div");
+      d.className = "animal-card" + (S.selAnimal === a.uid ? " hl" : "");
+      d.id = "acard-" + a.uid;
+      var fed = isFed(a);
+      var status = a.ready ? (A.pem + " " + tr("Siap diambil!", "Ready to collect!")) : (!fed && !a.nextAt ? tr("😋 Lapar — beri pakan untuk produksi", "😋 Hungry — feed it to produce") : tr("Sedang produksi", "Producing"));
+      var nextTxt = a.ready ? tr("Siap!", "Ready!") : (a.nextAt ? mmss(a.nextAt - nowMs()) : "—");
+      var fedTxt = fed ? mmss(a.fedUntil - nowMs()) : tr("Habis", "None");
+      d.innerHTML = '<div class="row-between"><b>' + A.em + ' ' + aName(A) + ' #' + a.num + '</b><span class="small">' + status + '</span></div>' +
+        '<div class="row small" style="margin:5px 0"><span>⏱️ ' + tr("Produk berikutnya: ", "Next product: ") + '<span class="cd">' + nextTxt + '</span></span><span>🌾 ' + tr("Sisa kenyang: ", "Feed left: ") + '<span class="cd">' + fedTxt + '</span></span></div>' +
+        '<div class="row"><button class="btn-green btn-small" data-act="collect" data-uid="' + a.uid + '"' + (a.ready ? "" : " disabled") + '>' + tr("Ambil ", "Collect ") + A.pem + '</button>' +
+        '<button class="btn-amber btn-small" data-act="feed" data-uid="' + a.uid + '">' + tr("Beri Pakan", "Feed") + '</button>' +
+        '<button class="btn-danger btn-small" data-act="sell" data-uid="' + a.uid + '">' + tr("Jual ", "Sell ") + aName(A) + ' #' + a.num + ' · +' + fmt(A.sellBack) + ' 🪙</button></div>';
+      cwrap.appendChild(d);
+    });
+  });
+  /* delegasi tombol */
+  wrap.querySelectorAll("button[data-act]").forEach(function(btn){
+    btn.onclick = function(){
+      var act = btn.dataset.act, type = btn.dataset.type, uid = btn.dataset.uid;
+      var a = S.animals.find(function(x){ return x.uid === uid; });
+      if (act === "buyfeed") {
+        if ((S.feedStock[type]||0) >= FEED_STOCK_MAX) return;
+        if (!spendCoins(ANIMALS[type].feed)) { renderStatus(); return; }
+        S.feedStock[type]++; toast(tr("🌾 Pakan " + aName(ANIMALS[type]).toLowerCase() + " +1", "🌾 " + aName(ANIMALS[type]) + " feed +1")); haptic(); save(); renderAll();
+      } else if (act === "buyanimal") {
+        var A = ANIMALS[type];
+        if (S.th < (A.thReq || 1)) { toast(tr("🔒 " + aName(A) + " terkunci — butuh Balai Kota Lv " + A.thReq, "🔒 " + aName(A) + " is locked — requires Town Hall Lv " + A.thReq)); haptic("error"); return; }
+        if (S.animals.filter(function(x){return x.type===type;}).length >= ANIMAL_MAX) return;
+        if (!spendCoins(A.buy)) { renderStatus(); return; }
+        S.animalSeq[type]++;
+        S.animals.push({ uid: "a" + Date.now() + "_" + type + S.animalSeq[type], type: type, num: S.animalSeq[type], fedUntil: 0, nextAt: null, remainingMs: A.cycle*1000, ready: false });
+        toast(A.em + " " + aName(A) + " #" + S.animalSeq[type] + tr(" dibeli — beri pakan agar berproduksi", " bought — feed it so it can produce")); haptic("success"); save(); renderAll();
+      } else if (act === "collectall") {
+        var n = 0;
+        S.animals.forEach(function(x){ if (x.type === type && x.ready) { if (collectAnimal(x, true)) n++; } });
+        if (n) { toast(tr("🧺 " + n + " produk diambil dari kandang", "🧺 " + n + " products collected from the pen")); haptic("success"); save(); renderAll(); }
+      } else if (act === "feed" && a) feedAnimal(a);
+      else if (act === "collect" && a) { collectAnimal(a); save(); renderAll(); }
+      else if (act === "sell" && a) {
+        var A2 = ANIMALS[a.type];
+        if (!confirmInPage(tr("Jual " + aName(A2) + " #" + a.num + " seharga " + fmt(A2.sellBack) + " 🪙?", "Sell " + aName(A2) + " #" + a.num + " for " + fmt(A2.sellBack) + " 🪙?"))) return;
+        S.coins += A2.sellBack;
+        S.animals = S.animals.filter(function(x){ return x.uid !== a.uid; });
+        delete penPos[a.uid];
+        toast(A2.em + " " + aName(A2) + " #" + a.num + tr(" terjual", " sold")); haptic(); save(); renderAll();
+      }
+    };
+  });
+}
+function animalProgress(a){
+  if (a.ready) return 100;
+  var A = ANIMALS[a.type];
+  if (a.nextAt) { var total = A.cycle*1000; var left = a.nextAt - nowMs(); return Math.min(100, Math.max(0, (1 - left/total) * 100)); }
+  if (a.remainingMs != null) return Math.min(100, Math.max(0, (1 - a.remainingMs/(A.cycle*1000)) * 100));
+  return 0;
+}
+function tapAnimal(a, el){
+  animalSound(a.type); haptic();
+  var A = ANIMALS[a.type];
+  var bub = el.querySelector(".bubble");
+  bub.textContent = LANG === "en" ? A.soundEn : A.sound; bub.classList.add("show");
+  setTimeout(function(){ bub.classList.remove("show"); }, 1400);
+  S.selAnimal = a.uid; save();
+  document.querySelectorAll(".animal-card").forEach(function(c){ c.classList.remove("hl"); });
+  var card = $("acard-" + a.uid);
+  if (card) { card.classList.add("hl"); card.scrollIntoView({ behavior:"smooth", block:"center" }); }
+}
+/* konfirmasi dalam halaman (pengganti confirm) */
+var confirmCb = null;
+function confirmInPage(msg){
+  /* versi sederhana sinkron memakai modal tidak memungkinkan; gunakan status dua-ketuk */
+  var key = "cf_" + msg;
+  if (window[key]) { window[key] = false; return true; }
+  window[key] = true; toast(tr("Ketuk tombol yang sama sekali lagi untuk konfirmasi: ", "Tap the same button again to confirm: ") + msg);
+  setTimeout(function(){ window[key] = false; }, 3500);
+  return false;
+}
+/* animasi kandang */
+function animatePens(){
+  document.querySelectorAll(".animal").forEach(function(el){
+    var p = penPos[el.dataset.uid]; if (!p) return;
+    var a = S.animals.find(function(x){ return x.uid === el.dataset.uid; });
+    var speed = (a && isFed(a)) ? 1 : 0.4; /* lapar bergerak lebih lambat */
+    p.x += p.vx * speed; p.y += p.vy * speed;
+    if (p.x < 10) { p.x = 10; p.vx = Math.abs(p.vx); }
+    if (p.x > 90) { p.x = 90; p.vx = -Math.abs(p.vx); }
+    if (p.y < 30) { p.y = 30; p.vy = Math.abs(p.vy); }
+    if (p.y > 82) { p.y = 82; p.vy = -Math.abs(p.vy); }
+    el.style.left = p.x + "%"; el.style.top = p.y + "%";
+    var bar = el.querySelector(".abar>i"); if (bar && a) bar.style.width = animalProgress(a) + "%";
+  });
+  requestAnimationFrame(animatePens);
+}
+
+/* ================= RENDER: PASAR ================= */
+function renderMarket(){
+  var list = $("inv-list"); list.innerHTML = "";
+  var ids = Object.keys(S.inv).filter(function(id){ return S.inv[id] > 0; });
+  var total = 0;
+  if (!ids.length) list.innerHTML = '<p class="muted small">' + tr("Gudang kosong — panen tanaman atau ambil produk hewan dulu.", "Storage is empty — harvest crops or collect animal products first.") + '</p>';
+  ids.forEach(function(id){
+    var info = itemInfo(id), n = S.inv[id];
+    total += info.sell * n;
+    var row = document.createElement("div"); row.className = "inv-row";
+    row.innerHTML = '<span class="em">' + info.em + '</span><div class="grow"><b>' + info.name + '</b><div class="small muted">' + n + ' item · ' + info.sell + ' 🪙 / item</div></div>' +
+      '<button class="btn-small" data-sell1="' + id + '">' + tr("Jual 1", "Sell 1") + '</button><button class="btn-small btn-green" data-sellall="' + id + '">' + tr("Jual Semua · ", "Sell All · ") + fmt(info.sell*n) + ' 🪙</button>';
+    list.appendChild(row);
+  });
+  $("inv-total").textContent = fmt(total) + " 🪙";
+  list.querySelectorAll("button[data-sell1]").forEach(function(b){ b.onclick = function(){ sellItem(b.dataset.sell1, 1); }; });
+  list.querySelectorAll("button[data-sellall]").forEach(function(b){ b.onclick = function(){ sellItem(b.dataset.sellall, S.inv[b.dataset.sellall]); }; });
+}
+function sellItem(id, n){
+  if (!S.inv[id] || n <= 0) return;
+  var info = itemInfo(id);
+  S.inv[id] -= n; S.coins += info.sell * n;
+  track("sell", n); addXp(n);
+  toast("🏪 " + info.name + " ×" + n + tr(" terjual", " sold") + " · +" + fmt(info.sell*n) + " 🪙"); haptic("success");
+  save(); renderAll();
+}
+
+/* ================= RENDER: MISI ================= */
+function renderMissions(){
+  ensureDaily();
+  var list = $("misi-list") || $("mission-list"); list.innerHTML = "";
+  var claimable = 0;
+  S.daily.missions.forEach(function(m, i){
+    var prog = Math.min(m.target, S.daily.counts[m.key] || 0);
+    var done = prog >= m.target;
+    if (done && !m.claimed) claimable++;
+    var d = document.createElement("div"); d.className = "mission" + (m.claimed ? " done" : "");
+    d.innerHTML = '<div class="row-between"><b>' + mLabel(m) + '</b><span class="pill">' + prog + ' / ' + m.target + '</span></div>' +
+      '<div class="xpbar" style="margin:7px 0"><i style="width:' + (prog/m.target*100) + '%"></i></div>' +
+      '<div class="row-between"><span class="small muted">' + tr("Hadiah: ", "Reward: ") + fmt(m.rc) + ' 🪙 + ' + m.rx + ' XP</span>' +
+      (m.claimed ? '<span class="small">' + tr("✅ Sudah diklaim", "✅ Claimed") + '</span>' : '<button class="btn-small btn-green" data-claim="' + i + '"' + (done ? "" : " disabled") + '>' + tr("Klaim", "Claim") + '</button>') + '</div>';
+    list.appendChild(d);
+  });
+  list.querySelectorAll("button[data-claim]").forEach(function(b){
+    b.onclick = function(){
+      var m = S.daily.missions[+b.dataset.claim];
+      if (m.claimed || (S.daily.counts[m.key]||0) < m.target) return;
+      m.claimed = true; S.coins += m.rc; addXp(m.rx);
+      toast(tr("📋 Misi selesai · +", "📋 Mission complete · +") + fmt(m.rc) + " 🪙"); haptic("success"); save(); renderAll();
+    };
+  });
+  var badge = $("badge-misi");
+  badge.style.display = claimable ? "flex" : "none"; badge.textContent = claimable;
+}
+
+/* ================= RENDER: GRAM & TOKO ================= */
+function renderGram(){
+  $("gram-bal").textContent = fmtGram(S.gram);
+  $("wallet-addr").textContent = S.wallet ? tr("EQ…Simulasi", "EQ…Simulation") : tr("Belum terhubung", "Not connected");
+  $("btn-wallet").textContent = S.wallet ? tr("Dompet Terhubung (Simulasi) ✓", "Wallet Connected (Simulation) ✓") : tr("Hubungkan Dompet (Simulasi)", "Connect Wallet (Simulation)");
+  var hist = $("wd-history");
+  if (S.withdrawals.length) {
+    hist.innerHTML = '<div class="divider"></div><h3>' + tr("Riwayat Penarikan (Simulasi)", "Withdrawal History (Simulation)") + '</h3>' + S.withdrawals.slice().reverse().map(function(w){
+      return '<div class="hist-row"><span>' + w.date + '</span><span>-' + fmtGram(w.amount) + ' Gram</span><span class="muted">' + tr("Terkirim (simulasi)", "Sent (simulation)") + '</span></div>';
+    }).join("");
+  } else hist.innerHTML = "";
+  var shop = $("shop-list"); shop.innerHTML = "";
+  SHOP.forEach(function(it){
+    var d = document.createElement("div"); d.className = "shop-item";
+    var priceHtml = it.coins ? '<span class="price-tag">' + fmt(it.coins) + ' 🪙</span>' + tr(" atau ", " or ") + '<span class="gram-price">' + fmtGram(it.gram) + ' Gram</span>'
+                             : '<span class="gram-price">' + fmtGram(it.gram) + ' Gram</span>';
+    d.innerHTML = '<div class="row-between"><b>' + shopName(it) + '</b><span>' + priceHtml + '</span></div>' +
+      '<p class="small muted">' + shopDesc(it) + '</p><div class="row">' +
+      (it.coins ? '<button class="btn-small btn-green" data-buy="coins" data-id="' + it.id + '">' + tr("Beli dengan Koin", "Buy with Coins") + '</button>' : '') +
+      '<button class="btn-small btn-amber" data-buy="gram" data-id="' + it.id + '">' + tr("Beli dengan Gram", "Buy with Gram") + '</button></div>';
+    shop.appendChild(d);
+  });
+  shop.querySelectorAll("button[data-buy]").forEach(function(b){
+    b.onclick = function(){
+      var it = SHOP.find(function(x){ return x.id === b.dataset.id; });
+      if (b.dataset.buy === "coins") { if (!spendCoins(it.coins)) { renderStatus(); return; } }
+      else { if (S.gram < it.gram) { toast(tr("💎 Gram tidak cukup", "💎 Not enough Gram")); haptic("error"); return; } S.gram -= it.gram; }
+      applyShopItem(it);
+      toast("✅ " + shopName(it).replace(/^\S+ /, "") + tr(" berhasil dibeli", " purchased successfully")); haptic("success");
+      save(); renderAll();
+    };
+  });
+}
+function applyShopItem(it){
+  var t = nowMs();
+  if (it.id === "pupuk") {
+    S.plots.forEach(function(p){ if (p) p.readyAt = Math.min(p.readyAt, t); });
+  } else if (it.id === "percepat") {
+    S.plots.forEach(function(p){ if (p && p.readyAt > t) p.readyAt = t + Math.floor((p.readyAt - t)/2); });
+  } else if (it.give) { S.coins += it.give; }
+}
+function renderExPreview(){
+  var v = parseFloat($("ex-input").value) || 0;
+  $("ex-preview").textContent = v > 0 ? (tr("≈ Kamu menerima ", "≈ You will receive ") + fmtGram(v/10000*GRAM_PER_10000) + " Gram") : "";
+}
+
+/* ================= RENDER: TEMAN ================= */
+function inviteMessage(){
+  return tr("🌾 Ayo main Farming Season bareng aku! Tanam, panen, pelihara ternak, dan kumpulkan koin. Pakai kode undanganku ", "🌾 Come play Farming Season with me! Plant, harvest, raise livestock, and collect coins. Use my invite code ") + S.inviteCode + tr(" saat mulai supaya dapat bonus sambutan +150 🪙 +25 XP. Selamat bertani!", " when you start to get a welcome bonus of +150 🪙 +25 XP. Happy farming!");
+}
+function renderFriends(){
+  $("my-code").textContent = S.inviteCode;
+  $("friend-count").textContent = S.friends.length;
+  var fl = $("friend-list");
+  fl.innerHTML = S.friends.length ? S.friends.map(function(f){ return '<div class="hist-row"><span>👤 ' + esc(f.name) + '</span><span class="muted">' + f.date + '</span><span>+100 🪙 +10 XP</span></div>'; }).join("") : "";
+  var ml = $("mile-list"); ml.innerHTML = "";
+  var claimable = 0;
+  MILESTONES.forEach(function(m, i){
+    var reached = S.friends.length >= m.n, claimed = S.milesClaimed.indexOf(i) >= 0;
+    if (reached && !claimed) claimable++;
+    var reward = fmt(m.rc) + " 🪙 + " + m.rx + " XP" + (m.rg ? " + " + fmtGram(m.rg) + " Gram" : "");
+    var d = document.createElement("div"); d.className = "mile";
+    d.innerHTML = '<span style="font-size:22px">' + (claimed ? "✅" : reached ? "🎁" : "🔒") + '</span><div class="grow"><b>' + m.n + ' ' + tr("teman bergabung", m.n === 1 ? "friend joined" : "friends joined") + '</b><div class="small muted">' + reward + '</div></div>' +
+      (claimed ? '<span class="small muted">' + tr("Diklaim", "Claimed") + '</span>' : '<button class="btn-small btn-green" data-mile="' + i + '"' + (reached ? "" : " disabled") + '>' + tr("Klaim", "Claim") + '</button>');
+    ml.appendChild(d);
+  });
+  ml.querySelectorAll("button[data-mile]").forEach(function(b){
+    b.onclick = function(){
+      var m = MILESTONES[+b.dataset.mile];
+      if (S.friends.length < m.n || S.milesClaimed.indexOf(+b.dataset.mile) >= 0) return;
+      S.milesClaimed.push(+b.dataset.mile);
+      S.coins += m.rc; S.gram += m.rg; addXp(m.rx);
+      toast(tr("🏆 Tonggak " + m.n + " teman diklaim!", "🏆 " + m.n + "-friend milestone claimed!")); haptic("success"); save(); renderAll();
+    };
+  });
+  $("redeem-status").textContent = S.redeemed ? tr("✅ Bonus sambutan sudah pernah ditukar di akun ini.", "✅ The welcome bonus has already been redeemed on this account.") : "";
+  var badge = $("badge-teman");
+  badge.style.display = claimable ? "flex" : "none"; badge.textContent = claimable;
+  var tb = $("badge-ternak");
+  var readyAnimals = S.animals.filter(function(a){ return a.ready; }).length;
+  tb.style.display = readyAnimals ? "flex" : "none"; tb.textContent = readyAnimals;
+}
+
+/* ================= RENDER SEMUA ================= */
+function renderAll(){
+  ensureDaily();
+  S.animals.forEach(settleAnimal);
+  renderStatus(); renderTH(); renderSeeds(); renderPlots(); renderPens();
+  renderMarket(); renderMissions(); renderGram(); renderFriends();
+}
+/* render ringan tiap detik: hanya hitung mundur & status */
+function tickRender(){
+  S.animals.forEach(settleAnimal);
+  renderStatus(); renderPlots(); renderPens(); renderMissions(); renderFriends();
+}
+</script>
+
+<script>
+"use strict";
+/* ================= IKAT TOMBOL & INIT ================= */
+function switchTab(name){
+  document.querySelectorAll(".tabbar button").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === name); });
+  document.querySelectorAll(".tabpage").forEach(function(p){ p.classList.remove("active"); });
+  var pg = $("page-" + name); if (pg) pg.classList.add("active");
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll(".tabbar button").forEach(function(b){
+  b.addEventListener("click", function(){ haptic(); switchTab(b.dataset.tab); });
+});
+
+$("btn-buy-plot").addEventListener("click", function(){
+  var max = TH_MAXPLOTS[S.th-1];
+  if (S.plotsOwned >= max) return;
+  var price = (S.plotsOwned - 3 + 1) * 1000;
+  if (!spendCoins(price)) { renderStatus(); return; }
+  S.plotsOwned++; S.plots.push(null);
+  toast(tr("🌱 Petak baru dibeli · total " + S.plotsOwned + " petak", "🌱 New plot bought · " + S.plotsOwned + " plots total")); haptic("success");
+  save(); renderAll();
+});
+$("btn-upgrade-th").addEventListener("click", function(){
+  if (S.th >= 5) return;
+  var cost = TH_UPGRADE[S.th];
+  if (!spendCoins(cost)) { renderStatus(); return; }
+  S.th++;
+  toast(tr("🏛️ Balai Kota naik ke Level " + S.th + " · petak maks " + TH_MAXPLOTS[S.th-1], "🏛️ Town Hall upgraded to Level " + S.th + " · max plots " + TH_MAXPLOTS[S.th-1])); haptic("success");
+  save(); renderAll();
+});
+$("btn-sell-all").addEventListener("click", function(){
+  var total = 0, count = 0;
+  Object.keys(S.inv).forEach(function(id){
+    var n = S.inv[id] || 0; if (n > 0) { total += itemInfo(id).sell * n; count += n; S.inv[id] = 0; }
+  });
+  if (!count) { toast(tr("Gudang kosong", "Storage is empty")); haptic("error"); return; }
+  S.coins += total; track("sell", count); addXp(count);
+  toast(tr("🏪 Semua terjual · +", "🏪 Everything sold · +") + fmt(total) + " 🪙"); haptic("success");
+  save(); renderAll();
+});
+
+/* Gram */
+$("btn-wallet").addEventListener("click", function(){
+  S.wallet = !S.wallet;
+  toast(S.wallet ? tr("👛 Dompet simulasi terhubung", "👛 Simulation wallet connected") : tr("👛 Dompet diputuskan", "👛 Wallet disconnected"));
+  haptic(); save(); renderGram();
+});
+$("ex-input").addEventListener("input", renderExPreview);
+$("btn-exchange").addEventListener("click", function(){
+  var v = Math.floor(parseFloat($("ex-input").value) || 0);
+  if (v < 10000) { toast(tr("Minimal tukar ", "Minimum exchange is ") + fmt(10000) + " 🪙"); haptic("error"); return; }
+  if (!spendCoins(v)) { renderStatus(); return; }
+  var g = v / 10000 * GRAM_PER_10000;
+  S.gram += g;
+  toast("🔄 " + fmt(v) + " 🪙 → " + fmtGram(g) + " Gram"); haptic("success");
+  $("ex-input").value = ""; renderExPreview();
+  save(); renderAll();
+});
+$("btn-withdraw").addEventListener("click", function(){
+  if (S.th < 4) { toast(tr("🔒 Butuh Balai Kota Level 4", "🔒 Requires Town Hall Level 4")); haptic("error"); return; }
+  if (!S.wallet) { toast(tr("Hubungkan dompet simulasi dulu", "Connect the simulation wallet first")); haptic("error"); return; }
+  var v = parseFloat($("wd-input").value) || 0;
+  if (v < 0.5) { toast(tr("Minimal tarik 0,5 Gram", "Minimum withdrawal is 0.5 Gram")); haptic("error"); return; }
+  if (S.gram < v) { toast(tr("💎 Gram tidak cukup", "💎 Not enough Gram")); haptic("error"); return; }
+  S.gram -= v;
+  S.withdrawals.push({ date: todayStr(), amount: v });
+  toast("🏧 " + fmtGram(v) + tr(" Gram ditarik (simulasi)", " Gram withdrawn (simulation)")); haptic("success");
+  $("wd-input").value = "";
+  save(); renderAll();
+});
+
+/* Teman */
+function copyText(txt, msg){
+  function done(){ toast(msg); haptic("success"); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ fallbackCopy(txt); done(); });
+  } else { fallbackCopy(txt); done(); }
+}
+function fallbackCopy(txt){
+  var ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch(e) {}
+  ta.remove();
+}
+$("btn-copy-code").addEventListener("click", function(){ copyText(S.inviteCode, tr("📋 Kode undangan disalin: ", "📋 Invite code copied: ") + S.inviteCode); });
+$("btn-copy-msg").addEventListener("click", function(){ copyText(inviteMessage(), tr("📋 Pesan undangan disalin", "📋 Invite message copied")); });
+$("btn-share-wa").addEventListener("click", function(){
+  haptic();
+  window.open("https://wa.me/?text=" + encodeURIComponent(inviteMessage()), "_blank");
+});
+$("btn-share-tg").addEventListener("click", function(){
+  haptic();
+  var url = "https://t.me/share/url?text=" + encodeURIComponent(inviteMessage());
+  if (TG && TG.openTelegramLink) TG.openTelegramLink(url); else window.open(url, "_blank");
+});
+$("btn-add-friend").addEventListener("click", function(){
+  var name = $("friend-name").value.trim();
+  if (!name) { toast(tr("Isi nama teman dulu", "Enter your friend's name first")); haptic("error"); return; }
+  S.friends.push({ name: name, date: todayStr() });
+  S.coins += 100; addXp(10);
+  $("friend-name").value = "";
+  toast("👥 " + name + tr(" bergabung", " joined") + " · +100 🪙 +10 XP"); haptic("success");
+  save(); renderAll();
+});
+$("btn-redeem").addEventListener("click", function(){
+  var code = $("redeem-input").value.trim().toUpperCase();
+  if (S.redeemed) { toast(tr("Bonus sambutan sudah pernah ditukar", "The welcome bonus has already been redeemed")); haptic("error"); return; }
+  if (!/^FARM-[A-Z0-9]{6}$/.test(code)) { toast(tr("Format kode: FARM-XXXXXX", "Code format: FARM-XXXXXX")); haptic("error"); return; }
+  if (code === S.inviteCode) { toast(tr("Tidak bisa memakai kode sendiri", "You can't use your own code")); haptic("error"); return; }
+  S.redeemed = true; S.coins += 150; addXp(25);
+  toast(tr("🎁 Bonus sambutan · +150 🪙 +25 XP", "🎁 Welcome bonus · +150 🪙 +25 XP")); haptic("success");
+  $("redeem-input").value = "";
+  save(); renderAll();
+});
+
+/* Musik */
+$("btn-music").addEventListener("click", function(){
+  S.musicOn = !S.musicOn;
+  if (S.musicOn) { audioCtx(); startMusic(); toast(tr("🎵 Musik latar menyala", "🎵 Background music on")); }
+  else { stopMusic(); toast(tr("🔇 Musik latar mati", "🔇 Background music off")); }
+  haptic(); save(); renderStatus();
+});
+
+/* Reset */
+$("btn-reset").addEventListener("click", function(){ $("reset-modal").classList.add("open"); haptic(); });
+$("btn-reset-cancel").addEventListener("click", function(){ $("reset-modal").classList.remove("open"); });
+$("btn-reset-ok").addEventListener("click", function(){
+  var keepMusic = S.musicOn;
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+  S = freshState(); S.musicOn = keepMusic; S.lang = LANG;
+  saveNow();
+  $("reset-modal").classList.remove("open");
+  toast(tr("🌱 Game dimulai ulang dari awal", "🌱 The game has been restarted from the beginning")); haptic("success");
+  renderAll();
+});
+
+/* ================= BAHASA: TEKS STATIS ================= */
+function applyStaticTexts(){
+  document.documentElement.lang = LANG === "en" ? "en" : "id";
+  function set(id, txt){ var el = $(id); if (el) el.textContent = txt; }
+  function setH(id, html){ var el = $(id); if (el) el.innerHTML = html; }
+  function setPh(id, txt){ var el = $(id); if (el) el.placeholder = txt; }
+  $("btn-music").title = tr("Musik latar", "Background music");
+  set("th-title", tr("🏛️ Balai Kota — Level", "🏛️ Town Hall — Level"));
+  set("th-stat-max", tr("Petak maks level ini", "Max plots at this level"));
+  set("th-stat-owned", tr("Petak dimiliki", "Plots owned"));
+  set("th-stat-animals", tr("Hewan ternak", "Livestock"));
+  set("th-gram-label", tr("💎 Tarik Gram:", "💎 Withdraw Gram:"));
+  set("garden-title", tr("🌾 Kebun Saya", "🌾 My Garden"));
+  set("seed-title", tr("🌱 Pilih Benih", "🌱 Choose Seeds"));
+  set("seed-help", tr("Ketuk benih, lalu ketuk petak kosong untuk menanam. Ketuk tanaman yang siap untuk memanen.", "Tap a seed, then tap an empty plot to plant it. Tap a ready crop to harvest it."));
+  set("market-title", tr("🏪 Pasar — Gudang Hasil", "🏪 Market — Produce Storage"));
+  set("btn-sell-all", tr("Jual Semua", "Sell All"));
+  set("market-desc", tr("Jual hasil panen dan produk ternak dari gudang untuk mendapatkan koin.", "Sell harvested crops and animal products from storage to earn coins."));
+  set("inv-total-label", tr("Total nilai gudang", "Total storage value"));
+  set("mission-title", tr("📋 Misi Harian", "📋 Daily Missions"));
+  set("mission-desc", tr("Misi diperbarui setiap hari. Selesaikan dan klaim hadiahnya.", "Missions refresh every day. Complete them and claim the rewards."));
+  set("wallet-title", tr("👛 Dompet Gram (Simulasi)", "👛 Gram Wallet (Simulation)"));
+  set("gram-bal-label", tr("Saldo Gram", "Gram Balance"));
+  set("wallet-addr-label", tr("Alamat", "Address"));
+  set("wallet-note", tr("Ini simulasi di dalam game — tidak ada Gram asli yang bergerak dan tidak ada dompet asli yang terhubung.", "This is an in-game simulation — no real Gram moves and no real wallet is connected."));
+  set("ex-title", tr("🔄 Tukar Koin → Gram", "🔄 Exchange Coins → Gram"));
+  setH("ex-rate", tr("Kurs: <b>10.000 🪙 = 0,01 Gram</b> · Minimal tukar 10.000 🪙", "Rate: <b>10,000 🪙 = 0.01 Gram</b> · Minimum exchange 10,000 🪙"));
+  set("btn-exchange", tr("Tukar", "Exchange"));
+  setPh("ex-input", tr("Jumlah koin, mis. 100000", "Amount of coins, e.g. 100000"));
+  set("wd-title", tr("🏧 Tarik Gram", "🏧 Withdraw Gram"));
+  setH("wd-info", tr("Minimal tarik <b>0,5 Gram</b> · Terbuka di <b>Balai Kota Level 4</b>", "Minimum withdrawal <b>0.5 Gram</b> · Unlocks at <b>Town Hall Level 4</b>"));
+  set("withdraw-lock", tr("🔒 Penarikan Gram terkunci — naikkan Balai Kota ke Level 4 dulu.", "🔒 Gram withdrawal is locked — upgrade your Town Hall to Level 4 first."));
+  setPh("wd-input", tr("Jumlah Gram, mis. 0.5", "Amount of Gram, e.g. 0.5"));
+  set("btn-withdraw", tr("Tarik", "Withdraw"));
+  set("shop-title", tr("💎 Toko Premium", "💎 Premium Shop"));
+  set("invite-title", tr("👥 Undang Teman", "👥 Invite Friends"));
+  setH("invite-desc", tr("Bagikan kode undanganmu. Setiap teman yang bergabung memberimu <b>+100 🪙 +10 XP</b>.", "Share your invite code. Every friend who joins gives you <b>+100 🪙 +10 XP</b>."));
+  set("btn-copy-code", tr("Salin Kode", "Copy Code"));
+  set("btn-copy-msg", tr("Salin Pesan Undangan", "Copy Invite Message"));
+  set("btn-share-wa", tr("Bagikan via WhatsApp", "Share via WhatsApp"));
+  set("btn-share-tg", tr("Bagikan via Telegram", "Share via Telegram"));
+  set("friend-heading", tr("Teman yang bergabung pakai kodemu", "Friends who joined with your code"));
+  setPh("friend-name", tr("Nama teman yang bergabung", "Name of the friend who joined"));
+  set("btn-add-friend", tr("Catat Teman", "Add Friend"));
+  set("friend-joined-label", tr("Sudah bergabung:", "Joined:"));
+  set("friend-joined-unit", tr("teman", "friends"));
+  set("mile-title", tr("🏆 Tonggak Undangan", "🏆 Invite Milestones"));
+  setH("mile-desc", tr("Total hadiah Gram dari semua tonggak maksimal <b>0,08 Gram</b>.", "The total Gram reward from all milestones is at most <b>0.08 Gram</b>."));
+  set("redeem-title", tr("🎁 Punya Kode Teman?", "🎁 Have a Friend's Code?"));
+  setH("redeem-desc", tr("Masukkan kode undangan teman untuk bonus sambutan <b>+150 🪙 +25 XP</b> (sekali pakai).", "Enter a friend's invite code for a welcome bonus of <b>+150 🪙 +25 XP</b> (one-time)."));
+  set("btn-redeem", tr("Tukar Kode", "Redeem Code"));
+  set("footer-note", tr("Progres tersimpan otomatis di perangkat ini.", "Progress is saved automatically on this device."));
+  set("btn-reset", tr("Mulai Ulang Game", "Restart Game"));
+  set("reset-title", tr("Mulai ulang game?", "Restart the game?"));
+  set("reset-desc", tr("Semua progres (koin, kebun, ternak, Gram, undangan) di perangkat ini akan dihapus dan mulai dari awal. Tindakan ini tidak bisa dibatalkan.", "All progress (coins, garden, livestock, Gram, invites) on this device will be deleted and started over. This cannot be undone."));
+  set("btn-reset-cancel", tr("Batal", "Cancel"));
+  set("btn-reset-ok", tr("Ya, Mulai Ulang", "Yes, Restart"));
+  var tabNames = { kebun: tr("Kebun", "Garden"), ternak: tr("Ternak", "Livestock"), pasar: tr("Pasar", "Market"), misi: tr("Misi", "Missions"), gram: "Gram", teman: tr("Teman", "Friends") };
+  document.querySelectorAll(".tabbar button").forEach(function(b){
+    var s = b.querySelector(".tab-label"); if (s && tabNames[b.dataset.tab]) s.textContent = tabNames[b.dataset.tab];
+  });
+}
+/* ================= INIT ================= */
+loadState();
+applyStaticTexts();
+ensureDaily();
+/* normalisasi petak */
+while (S.plots.length < S.plotsOwned) S.plots.push(null);
+S.plots.length = S.plotsOwned;
+S.animals.forEach(settleAnimal);
+renderAll();
+renderExPreview();
+if (S.musicOn) {
+  /* musik butuh interaksi pertama di browser/Telegram */
+  var kick = function(){ startMusic(); document.removeEventListener("pointerdown", kick); };
+  document.addEventListener("pointerdown", kick);
+}
+setInterval(function(){ tickRender(); save(); }, 1000);
+requestAnimationFrame(animatePens);
+window.addEventListener("beforeunload", saveNow);
+</script>
+</body>
+</html>
